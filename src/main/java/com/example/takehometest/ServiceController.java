@@ -17,24 +17,29 @@ import java.net.http.HttpResponse;
 @RestController
 @RequestMapping(value = "/api/v1")
 public class ServiceController {
-  @Value("${service.url}")
-  private String reqUrl;
+  @Value("${external.url.openlibrary}")
+  private String baseUrl;
+  @Value("${external.url.openlibrary.search}")
+  private String searchPath;
+  @Value("${external.url.openlibrary.books}")
+  private String booksPath;
+
   @GetMapping(value = "/search")
   public String search(@RequestParam String text) {
     String textProcessed = text.replaceAll(" ", "+");
-    String url = "/search.json?q=" + textProcessed;
+    String url = searchPath + textProcessed;
     return processRequest(url);
   }
 
   @GetMapping(value = "/get")
   public String get(@RequestParam String id) {
-    String url = "/books/" + id + ".json";
+    String url = booksPath + id + ".json";
     return processRequest(url);
   }
 
   private String processRequest(String url) {
     HttpClient client = HttpClient.newHttpClient();
-    URI uri = URI.create(reqUrl + url);
+    URI uri = URI.create(baseUrl + url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
     try {
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -44,13 +49,13 @@ public class ServiceController {
       JsonNode node = mapper.readValue(json, JsonNode.class);
       JsonNode errorNode = node.get("error");
 
-      if(errorNode != null) {
+      if (errorNode != null) {
         return "{\"error\": \"An external service gave error (" + errorNode + ")\"}";
       }
       return response.body();
-    } catch(IOException e) {
+    } catch (IOException e) {
       return "{\"error\": \"Couldn't execute the request correctly due to data processing error\"}";
-    } catch(InterruptedException e) {
+    } catch (InterruptedException e) {
       return "{\"error\": \"The request was interrupted\"}";
     }
   }
