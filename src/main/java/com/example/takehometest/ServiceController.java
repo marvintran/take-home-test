@@ -15,8 +15,9 @@ public class ServiceController {
   @GetMapping(value = "/search")
   public String search(@RequestParam String text) throws IOException, InterruptedException {
     System.out.println(text);
+    String textProcessed = text.replaceAll(" ", "+");
     HttpClient client = HttpClient.newHttpClient();
-    String url = "http://openlibrary.org/search.json?q=" + text;
+    String url = "http://openlibrary.org/search.json?q=" + textProcessed;
     URI uri = URI.create(url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
