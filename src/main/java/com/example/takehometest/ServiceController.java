@@ -1,6 +1,7 @@
 package com.example.takehometest;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 @RestController
+@RequestMapping(value = "/rest-api/v1")
 public class ServiceController {
   @GetMapping(value = "/search")
   public String search(@RequestParam String text) throws IOException, InterruptedException {
