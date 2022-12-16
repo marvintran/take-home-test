@@ -1,5 +1,7 @@
 package com.example.takehometest;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,30 +15,43 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 @RestController
-@RequestMapping(value = "/rest-api/v1")
+@RequestMapping(value = "/api/v1")
 public class ServiceController {
   @Value("${service.url}")
   private String reqUrl;
   @GetMapping(value = "/search")
-  public String search(@RequestParam String text) throws IOException, InterruptedException {
-    System.out.println(text);
+  public String search(@RequestParam String text) {
     String textProcessed = text.replaceAll(" ", "+");
-    HttpClient client = HttpClient.newHttpClient();
-    String url = reqUrl + "/search.json?q=" + textProcessed;
-    URI uri = URI.create(url);
-    HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
-    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-    return response.body();
+    String url = "/search.json?q=" + textProcessed;
+    return processRequest(url);
   }
 
   @GetMapping(value = "/get")
-  public String get(@RequestParam String id) throws IOException, InterruptedException {
-    System.out.println(id);
+  public String get(@RequestParam String id) {
+    String url = "/books/" + id + ".json";
+    return processRequest(url);
+  }
+
+  private String processRequest(String url) {
     HttpClient client = HttpClient.newHttpClient();
-    String url = reqUrl + "/books/" + id + ".json";
-    URI uri = URI.create(url);
+    URI uri = URI.create(reqUrl + url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
-    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-    return response.body();
+    try {
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+      String json = response.body();
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode node = mapper.readValue(json, JsonNode.class);
+      JsonNode errorNode = node.get("error");
+
+      if(errorNode != null) {
+        return "{\"error\": \"An external service gave error (" + errorNode + ")\"}";
+      }
+      return response.body();
+    } catch(IOException e) {
+      return "{\"error\": \"Couldn't execute the request correctly due to data processing error\"}";
+    } catch(InterruptedException e) {
+      return "{\"error\": \"The request was interrupted\"}";
+    }
   }
 }
