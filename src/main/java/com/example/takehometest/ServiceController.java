@@ -1,5 +1,6 @@
 package com.example.takehometest;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,12 +15,14 @@ import java.net.http.HttpResponse;
 @RestController
 @RequestMapping(value = "/rest-api/v1")
 public class ServiceController {
+  @Value("${service.url}")
+  private String reqUrl;
   @GetMapping(value = "/search")
   public String search(@RequestParam String text) throws IOException, InterruptedException {
     System.out.println(text);
     String textProcessed = text.replaceAll(" ", "+");
     HttpClient client = HttpClient.newHttpClient();
-    String url = "http://openlibrary.org/search.json?q=" + textProcessed;
+    String url = reqUrl + "/search.json?q=" + textProcessed;
     URI uri = URI.create(url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -30,7 +33,7 @@ public class ServiceController {
   public String get(@RequestParam String id) throws IOException, InterruptedException {
     System.out.println(id);
     HttpClient client = HttpClient.newHttpClient();
-    String url = "https://openlibrary.org/books/" + id + ".json";
+    String url = reqUrl + "/books/" + id + ".json";
     URI uri = URI.create(url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
