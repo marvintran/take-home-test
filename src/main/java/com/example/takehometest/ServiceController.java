@@ -49,10 +49,8 @@ public class ServiceController {
       JsonNode node = mapper.readValue(json, JsonNode.class);
       JsonNode errorNode = node.get("error");
 
-      if (errorNode != null) {
-        return "{\"error\": \"An external service gave error (" + errorNode + ")\"}";
-      }
-      return response.body();
+      return errorNode != null ? "{\"error\": \"An external service gave error (" + errorNode + ")\"}" : response.body();
+
     } catch (IOException e) {
       return "{\"error\": \"Couldn't execute the request correctly due to data processing error\"}";
     } catch (InterruptedException e) {
