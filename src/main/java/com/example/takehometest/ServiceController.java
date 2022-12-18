@@ -2,6 +2,7 @@ package com.example.takehometest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 @RestController
-@RequestMapping(value = "/api/v1")
+@RequestMapping(value = "/api/v1", produces = "application/json")
 public class ServiceController {
   @Value("${external.url.openlibrary}")
   private String baseUrl;
@@ -42,15 +43,29 @@ public class ServiceController {
     HttpClient client = HttpClient.newHttpClient();
     URI uri = URI.create(baseUrl + url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
+
     try {
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
       String json = response.body();
       ObjectMapper mapper = new ObjectMapper();
       JsonNode node = mapper.readValue(json, JsonNode.class);
-      JsonNode errorNode = node.get("error");
 
-      return errorNode != null ? "{\"error\": \"An external service gave error (" + errorNode + ")\"}" : response.body();
+      JsonNode errorNode = node.get("error");
+      JsonNode keyNode = node.get("key");
+
+      if (errorNode != null) {
+        String errorValue = errorNode.asText();
+        String keyValue = keyNode.asText().replace(booksPath, "");
+
+        ObjectNode toReturn = mapper.createObjectNode();
+        toReturn.put("error", errorValue);
+        toReturn.put("key", keyValue);
+
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(toReturn);
+      }
+
+      return response.body();
 
     } catch (IOException e) {
       return "{\"error\": \"Couldn't execute the request correctly due to data processing error\"}";
