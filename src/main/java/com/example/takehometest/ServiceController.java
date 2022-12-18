@@ -33,7 +33,8 @@ public class ServiceController {
 
   @GetMapping(value = "/get")
   public String get(@RequestParam String id) {
-    String url = booksPath + id + ".json";
+    String idProcessed = id.trim().replaceAll(" ", "_");
+    String url = booksPath + idProcessed + ".json";
     return processRequest(url);
   }
 
