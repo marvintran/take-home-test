@@ -39,4 +39,23 @@ class TakeHomeTestApplicationTests {
       fail(e);
     }
   }
+
+  @Test
+  void testingSearchWithEmptyStringNothingFound() {
+    try {
+      String text = "";
+      String url = SEARCH_PATH + text;
+      String response = serviceController.processRequest(url);
+
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode node = mapper.readValue(response, JsonNode.class);
+      JsonNode numFoundNode = node.get("numFound");
+      String expected = numFoundNode.asText();
+
+      int numFound = Integer.parseInt(expected);
+      assertTrue(numFound == 0);
+    } catch (Exception e) {
+      fail(e);
+    }
+  }
 }
