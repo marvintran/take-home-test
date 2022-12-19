@@ -2,7 +2,6 @@ package com.example.takehometest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,30 +17,27 @@ import java.net.http.HttpResponse;
 @RestController
 @RequestMapping(value = "/api/v1", produces = "application/json")
 public class ServiceController {
-  @Value("${external.url.openlibrary}")
-  private String baseUrl;
-  @Value("${external.url.openlibrary.search}")
-  private String searchPath;
-  @Value("${external.url.openlibrary.books}")
-  private String booksPath;
+  private final String BASE_URL = "https://openlibrary.org";
+  private final String SEARCH_PATH = "/search.json?q=";
+  private final String BOOKS_PATH = "/books/";
 
   @GetMapping(value = "/search")
   public String search(@RequestParam String text) {
     String textProcessed = text.replaceAll(" ", "+");
-    String url = searchPath + textProcessed;
+    String url = SEARCH_PATH + textProcessed;
     return processRequest(url);
   }
 
   @GetMapping(value = "/get")
   public String get(@RequestParam String id) {
     String idProcessed = id.trim().replaceAll(" ", "_");
-    String url = booksPath + idProcessed + ".json";
+    String url = BOOKS_PATH + idProcessed + ".json";
     return processRequest(url);
   }
 
-  private String processRequest(String url) {
+  public String processRequest(String url) {
     HttpClient client = HttpClient.newHttpClient();
-    URI uri = URI.create(baseUrl + url);
+    URI uri = URI.create(BASE_URL + url);
     HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
 
     try {
@@ -56,13 +52,9 @@ public class ServiceController {
 
       if (errorNode != null) {
         String errorValue = errorNode.asText();
-        String keyValue = keyNode.asText().replace(booksPath, "");
+        String keyValue = keyNode.asText().replace(BOOKS_PATH, "");
 
-        ObjectNode toReturn = mapper.createObjectNode();
-        toReturn.put("error", errorValue);
-        toReturn.put("key", keyValue);
-
-        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(toReturn);
+        return String.format("{\"error\": \"%s\", \"key\": \"%s\"}", errorValue, keyValue);
       }
 
       return response.body();
