@@ -59,3 +59,4 @@ For monitoring, Spring Boot Actuator has been added as a dependency which can be
 ## Future enhancements
 * I would have liked to create my own custom exception handling. Right now I create my own custom string, but I would have liked to create something such as a BookNotFoundException
 * Setting up Docker Compose is something I would have liked to do as well
+* Initially I had used @Value and pulled it from application.properties, but when running tests, the values were null. In the end I used final Strings, but I would have liked to use application.properties
