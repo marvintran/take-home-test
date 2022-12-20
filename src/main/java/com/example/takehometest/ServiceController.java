@@ -1,5 +1,6 @@
 package com.example.takehometest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,7 @@ public class ServiceController {
   public String search(@RequestParam String text) {
     String textProcessed = text.replaceAll(" ", "+");
     String url = SEARCH_PATH + textProcessed;
+
     return processRequest(url);
   }
 
@@ -31,20 +33,11 @@ public class ServiceController {
   public String get(@RequestParam String id) {
     String idProcessed = id.trim().replaceAll(" ", "_");
     String url = BOOKS_PATH + idProcessed + ".json";
-    return processRequest(url);
-  }
-
-  public String processRequest(String url) {
-    HttpClient client = HttpClient.newHttpClient();
-    URI uri = URI.create(BASE_URL + url);
-    HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
+    String response = processRequest(url);
 
     try {
-      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-      String json = response.body();
       ObjectMapper mapper = new ObjectMapper();
-      JsonNode node = mapper.readValue(json, JsonNode.class);
+      JsonNode node = mapper.readValue(response, JsonNode.class);
 
       JsonNode errorNode = node.get("error");
       JsonNode keyNode = node.get("key");
@@ -55,7 +48,20 @@ public class ServiceController {
 
         return String.format("{\"error\": \"%s\", \"key\": \"%s\"}", errorValue, keyValue);
       }
+    } catch (JsonProcessingException e) {
+      return "{\"error\": \"Couldn't parse the json correctly\"}";
+    }
 
+    return response;
+  }
+
+  public String processRequest(String url) {
+    HttpClient client = HttpClient.newHttpClient();
+    URI uri = URI.create(BASE_URL + url);
+    HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
+
+    try {
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
       return response.body();
 
     } catch (IOException e) {
